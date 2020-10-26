@@ -1,9 +1,10 @@
-import express from "express"
+import express from "express";
 import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
 require("dotenv").config();
 import mongoose from "mongoose";
+import rateLimit from "express-rate-limit";
 
 const app = express();
 
@@ -19,14 +20,27 @@ connection.once("open", () => {
 	console.log("MongoDB database connection successful");
 });
 
-import api from "./api"
-import middlewares from "./middleware"
+import api from "./api";
+import middlewares from "./middleware";
+import apiKey from "./middleware/apiKey";
 
 app.get("/", (req, res) => {
 	res.json({
 		message: "🎥🎬🎬🍿🎥🎬🎬🍿",
 	});
 });
+
+app.use(apiKey)
+
+app.use(
+	rateLimit({
+		windowMs: 15 * 60 * 1000, // 15 minutes
+		max: 15,
+		keyGenerator: (req: express.Request, res) => {
+			return req.get("X-API-Key") || req.ip;
+		},
+	})
+);
 
 app.use("/api/v1", api);
 
