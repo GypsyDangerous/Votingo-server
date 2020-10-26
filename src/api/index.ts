@@ -10,8 +10,8 @@ router.get("/", (req, res) => {
 	});
 });
 
-router.get("/polls", polls)
+router.use("/polls", polls)
 
-router.get("/users", users)
+router.use("/users", users)
 
 export = router;
