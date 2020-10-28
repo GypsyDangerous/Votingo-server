@@ -1,16 +1,9 @@
 import express from "express";
 const router = express.Router();
-import Joi from "joi";
+import { pollSubmitSchema } from "../utils/JoiSchemas";
 import uid from "uid";
 
 import Poll from "../models/poll.model";
-
-const pollSubmitSchema = Joi.object({
-	name: Joi.string().min(3).max(25).required(),
-	description: Joi.string().min(3).max(500),
-	options: Joi.array().min(2).unique(),
-	private: Joi.boolean(),
-});
 
 router.post("/create", async (req, res, next) => {
 	const { value, error } = pollSubmitSchema.validate(req.body);
@@ -20,7 +13,7 @@ router.post("/create", async (req, res, next) => {
 		const id = uid();
 		const pollObj = {
 			...value,
-			options: value.options.reduce((acc: any, cur: string) => ({ ...acc, [cur]: 0 }), {}),
+			options: value.options.map((name: string) => ({ name, votes: 0 })),
 			uuid: id,
 			creator: "anonymous",
 			private: !!value.private,
@@ -34,7 +27,8 @@ router.post("/create", async (req, res, next) => {
 router.patch("/vote/:id", async (req, res, next) => {
 	const { id } = req.params;
 	const { option } = req.body;
-	const poll = await Poll.findOne({ uuid: id });
+	// TODO: convert to findOneAndUpdate
+	const poll: any = await Poll.findOne({ uuid: id });
 	if (!poll) {
 		return res.status(400).json({ code: 400, message: "invalid poll id" });
 	}
@@ -64,12 +58,12 @@ router.get("/:id", async (req, res, next) => {
 });
 
 router.get("/", async (req, res, next) => {
-	try{
-		const polls = await Poll.find()
-        res.json(polls)
-    }catch(err){
-        next(err)
-    }
-})
+	try {
+		const polls = await Poll.find();
+		res.json(polls);
+	} catch (err) {
+		next(err);
+	}
+});
 
 export = router;
