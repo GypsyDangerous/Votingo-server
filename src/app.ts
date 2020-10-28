@@ -6,6 +6,8 @@ require("dotenv").config();
 import mongoose from "mongoose";
 import rateLimit from "express-rate-limit";
 
+import graphql from "./graphql"
+
 const app = express();
 
 app.use(morgan("dev"));
@@ -41,6 +43,8 @@ app.use(
 		},
 	})
 );
+
+graphql.applyMiddleware({ app });
 
 app.use("/api/v1", api);
 
