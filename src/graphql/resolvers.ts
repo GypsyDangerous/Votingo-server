@@ -2,6 +2,20 @@ import mongoose from "mongoose";
 import { pollSubmitSchema } from "../utils/JoiSchemas";
 import Poll from "../models/poll.model";
 import uid from "uid";
+import { promisify } from "../utils";
+
+const asyncDeletePoll = async (id: string) => {
+	return new Promise((res, rej) => {
+		Poll.findByIdAndDelete(id, (err, result) => {
+			if(err){
+				rej(err)
+			}else{
+				res(result)
+			}
+		})
+	})
+}
+
 // Provide resolver functions for your schema fields
 const resolvers = {
 	Query: {
@@ -32,6 +46,7 @@ const resolvers = {
 			return newPoll.save();
 		},
 		vote: async (parent: any, { id, option }: any) => {
+			// TODO: refactor with findOneAndUpdate
 			const poll: any = await Poll.findOne({ _id: id });
 			const optionIdx = poll.options.findIndex((op: any) => op.name === option);
 			const votedOption = { ...poll.options[optionIdx] };
@@ -39,6 +54,10 @@ const resolvers = {
 			poll.markModified(`options.${optionIdx}.votes`);
 			return poll.save()
 		},
+		deletePoll: async (parent: any, {id}: any) => {
+			const poll = await asyncDeletePoll(id)
+			return poll
+		}
 	},
 };
 

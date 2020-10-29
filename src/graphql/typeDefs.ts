@@ -26,6 +26,7 @@ const typeDefs = gql`
 	type Mutation {
 		createPoll(name: String!, description: String, options: [String]!, private: Boolean): Poll
 		vote(id: ID!, option: String): Poll
+		deletePoll(id: ID!): Poll
 	}
 `;
 
