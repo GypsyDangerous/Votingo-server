@@ -2,25 +2,25 @@ import express from "express";
 const router = express.Router();
 import { pollSubmitSchema } from "../utils/JoiSchemas";
 import uid from "uid";
-
+import randomColor from "randomcolor";
 import Poll from "../models/poll.model";
 
 router.post("/create", async (req, res, next) => {
 	const { value, error } = pollSubmitSchema.validate(req.body);
 	if (error) {
-		res.status(400).json({ code: 400, message: error.details[0].message });
+		return res.status(400).json({ code: 400, message: `invalid poll data: ${error.details[0].message}` });
 	} else {
 		const id = uid();
 		const pollObj = {
 			...value,
-			options: value.options.map((name: string) => ({ name, votes: 0 })),
+			options: value.options.map((name: string) => ({ name, votes: 0, color: randomColor() })),
 			uuid: id,
 			creator: "anonymous",
 			private: !!value.private,
 		};
 		const newPoll = new Poll(pollObj);
 		await newPoll.save();
-		res.json({ code: 200, message: "poll created", id });
+		res.json({ code: 200, message: "poll created Successfully", id });
 	}
 });
 
@@ -38,21 +38,23 @@ router.patch("/vote/:id", async (req, res, next) => {
 	poll.options[option] += 1;
 	poll.markModified("options." + option);
 	await poll.save();
-	res.json({ code: 200, message: "success" });
+	res.json({ code: 200, message: "Thanks for Voting!", ...poll });
 });
 
-router.delete("/delete/:id", async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
+	// check permissions
 	const { id } = req.params;
+	const poll = await Poll.findOne({ uuid: id });
 	await Poll.findOneAndDelete({ uuid: id });
 
-	res.json({ code: 200, message: "Successfully deleted the poll" });
+	res.json({ code: 200, message: "Successfully deleted the poll", ...poll });
 });
 
 router.get("/:id", async (req, res, next) => {
 	const { id } = req.params;
 	const poll = await Poll.findOne({ uuid: id });
 	if (!poll) {
-		res.status(400).json({ code: 400, message: "invalid message id" });
+		return res.status(400).json({ code: 400, message: "invalid message id" });
 	}
 	res.json(poll);
 });
