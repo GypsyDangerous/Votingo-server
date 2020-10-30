@@ -23,7 +23,7 @@ interface PollType {
 	description?: string;
 }
 
-router.post("/create", async (req, res, next) => {
+router.post("/", async (req, res, next) => {
 	const { value, error } = pollSubmitSchema.validate(req.body);
 	if (error) {
 		return res.status(400).json({ code: 400, message: `invalid poll data: ${error.details[0].message}` });
@@ -55,15 +55,16 @@ router.patch("/vote/:id", async (req, res, next) => {
 	poll.options[option] += 1;
 	poll.markModified("options." + option);
 	await poll.save();
-	res.json({ code: 200, message: "success" });
+	res.json({ code: 200, message: "Thanks for Voting!", ...poll });
 });
 
-router.delete("/delete/:id", async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
 	// check permissions
 	const { id } = req.params;
+	const poll = await Poll.findOne({ uuid: id });
 	await Poll.findOneAndDelete({ uuid: id });
 
-	res.json({ code: 200, message: "Successfully deleted the poll" });
+	res.json({ code: 200, message: "Successfully deleted the poll", ...poll });
 });
 
 router.get("/:id", async (req, res, next) => {
